@@ -52,12 +52,12 @@ def search(query, topicid):
     # res = es.search(index="pubmed-data", doc_type=str(topicid), body={"query": {"match_all": {}}})
     # res = es.search(index="pubmed-data", doc_type=str(topicid), body={"query": {"query_string": {"query": query}},"size":10000})
 
-    # res = es.search(index="pubmed-data", doc_type=str(topicid), body={"query": {"multi_match": {"query": query,
-    #                                                                                             "type": "most_fields",
-    #                                                                                             "fields": [ "title","abstract"],
-    #                                                                                             "minimum_should_match": "20%",
-    #                                                                                             "operator": "or"
-    #                                                                                             }},"size":9000})
+    res = es.search(index="pubmed-data", doc_type=str(topicid), body={"query": {"multi_match": {"query": query,
+                                                                                                "type": "most_fields",
+                                                                                                "fields": ["title","abstract"],
+                                                                                                # "minimum_should_match": "20%",
+                                                                                                "operator": "or"
+                                                                                                }},"size":10000,})
 
 #     res = es.search(index="pubmed-data", doc_type=str(topicid), body={
 #     "query": {
@@ -95,29 +95,29 @@ def search(query, topicid):
 # })
 
     # res = es.search(index="pubmed-data", doc_type=str(topicid), body= )
-    res = es.search(index="pubmed-data", doc_type=str(topicid), body={
-    "query": {
-        "match": {
-            "abstract": {
-                "query":                query,
-                "minimum_should_match": "50%"
-            }
-        }
-    },
-    "rescore": {
-        "window_size": 50,
-        "query": {
-            "rescore_query": {
-                "match_phrase": {
-                    "abstract": {
-                        "query": query,
-                        "slop":  50
-                    }
-                }
-            }
-        }
-    }
-})
+#     res = es.search(index="pubmed-data", doc_type=str(topicid), body={
+#     "query": {
+#         "match": {
+#             "abstract": {
+#                 "query":                query,
+#                 "minimum_should_match": "50%"
+#             }
+#         }
+#     },
+#     "rescore": {
+#         "window_size": 50,
+#         "query": {
+#             "rescore_query": {
+#                 "match_phrase": {
+#                     "abstract": {
+#                         "query": query,
+#                         "slop":  50
+#                     }
+#                 }
+#             }
+#         }
+#     }
+# })
     print("Got %d Hits:" % res['hits']['total'])
     # print("pid\t\t\t"+"score")
     # for hit in res['hits']['hits']:
@@ -125,12 +125,49 @@ def search(query, topicid):
     #     print(str(hit["_id"]) + "\t" +  str(hit["_score"]))
     #     #print(hit["_id"])
     filename = str(topicid)+".csv"
-    with open("CSV\\"+filename, 'w') as csvfile:
+    with open("CSV\\QueryTitleAbstractScore\\"+filename, 'w') as csvfile:
         fieldnames = ['pid', 'score']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for hit in res['hits']['hits']:
             writer.writerow({'pid': str(hit["_id"]), 'score': str(hit["_score"]) })
+
+
+def searchAbstract(query, topicid):
+    res = es.search(index="pubmed-data", doc_type=str(topicid), body={"query": {"multi_match": {"query": query,
+                                                                                                "type": "most_fields",
+                                                                                                "fields": ["abstract"],
+                                                                                                # "minimum_should_match": "20%",
+                                                                                                "operator": "or"
+                                                                                                }}, "size": 10000})
+
+    print("Got %d Hits:" % res['hits']['total'])
+    filename = str(topicid) + ".csv"
+    with open("CSV\\QueryAbstractScore\\" + filename, 'w') as csvfile:
+        fieldnames = ['pid', 'score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for hit in res['hits']['hits']:
+            writer.writerow({'pid': str(hit["_id"]), 'score': str(hit["_score"])})
+
+
+def searchTitle(query, topicid):
+    res = es.search(index="pubmed-data", doc_type=str(topicid), body={"query": {"multi_match": {"query": query,
+                                                                                                "type": "most_fields",
+                                                                                                "fields": ["title"],
+                                                                                                # "minimum_should_match": "20%",
+                                                                                                "operator": "or"
+                                                                                                }}, "size": 10000})
+
+    print("Got %d Hits:" % res['hits']['total'])
+    filename = str(topicid) + ".csv"
+    with open("CSV\\QueryTitleScore\\" + filename, 'w') as csvfile:
+        fieldnames = ['pid', 'score']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for hit in res['hits']['hits']:
+            writer.writerow({'pid': str(hit["_id"]), 'score': str(hit["_score"])})
+
 
 def get_pid(topicid):
     p=[]
